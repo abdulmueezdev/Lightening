@@ -5,9 +5,10 @@ import { Zap, CheckCircle, Clock } from "lucide-react";
 
 interface LightningAlertsProps {
   enabled: boolean;
+  isConnected: boolean;
 }
 
-export default function LightningAlerts({ enabled }: LightningAlertsProps) {
+export default function LightningAlerts({ enabled, isConnected }: LightningAlertsProps) {
   const { data: strikes = [], isLoading } = useQuery<LightningStrike[]>({
     queryKey: ["/api/lightning"],
     queryFn: async () => {
@@ -22,14 +23,22 @@ export default function LightningAlerts({ enabled }: LightningAlertsProps) {
         timestamp: new Date(strike.timestamp)
       }));
     },
-    refetchInterval: enabled ? 10000 : false, // Refetch every 10 seconds if enabled
+    refetchInterval: enabled && isConnected ? 10000 : false, // Refetch every 10 seconds if enabled and connected
   });
 
   const { formatTimeAgo, getIntensityBars } = useLightning();
 
+  if (!isConnected) {
+    return (
+      <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+        <p className="text-sm">Connect to view lightning alerts</p>
+      </div>
+    );
+  }
+
   if (!enabled) {
     return (
-      <div className="text-center text-gray-500 py-8">
+      <div className="text-center text-gray-500 dark:text-gray-400 py-8">
         <p className="text-sm">Lightning alerts are disabled</p>
       </div>
     );

@@ -5,9 +5,10 @@ import { WeatherData } from "@shared/schema";
 
 interface WeatherCardProps {
   selectedLocation: { lat: number; lon: number; name: string } | null;
+  isConnected: boolean;
 }
 
-export default function WeatherCard({ selectedLocation }: WeatherCardProps) {
+export default function WeatherCard({ selectedLocation, isConnected }: WeatherCardProps) {
   // Extract city name properly, handling coordinates vs city names
   const getCityName = () => {
     if (!selectedLocation) return "San Francisco";
@@ -38,8 +39,8 @@ export default function WeatherCard({ selectedLocation }: WeatherCardProps) {
       }
       return response.json();
     },
-    enabled: !!cityName,
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    enabled: !!cityName && isConnected,
+    refetchInterval: isConnected ? 5 * 60 * 1000 : false, // Refetch every 5 minutes if connected
   });
 
   const handleRefresh = () => {
@@ -48,10 +49,10 @@ export default function WeatherCard({ selectedLocation }: WeatherCardProps) {
 
   if (error) {
     return (
-      <div className="bg-red-100 border border-red-200 rounded-xl p-6 text-red-800">
+      <div className="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-red-800 dark:text-red-200">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold">Weather Error</h3>
-          <Button variant="ghost" size="sm" onClick={handleRefresh}>
+          <Button variant="ghost" size="sm" onClick={handleRefresh} className="hover:bg-red-200 dark:hover:bg-red-800/20">
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>

@@ -8,9 +8,10 @@ import { CitySearchResult } from "@shared/schema";
 
 interface CitySearchProps {
   onLocationSelect: (location: { lat: number; lon: number; name: string }) => void;
+  isConnected: boolean;
 }
 
-export default function CitySearch({ onLocationSelect }: CitySearchProps) {
+export default function CitySearch({ onLocationSelect, isConnected }: CitySearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -25,7 +26,7 @@ export default function CitySearch({ onLocationSelect }: CitySearchProps) {
       }
       return response.json();
     },
-    enabled: searchQuery.length >= 2,
+    enabled: searchQuery.length >= 2 && isConnected,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
@@ -73,7 +74,7 @@ export default function CitySearch({ onLocationSelect }: CitySearchProps) {
 
   return (
     <div className="relative" ref={containerRef}>
-      <Label htmlFor="citySearch" className="block text-sm font-medium text-gray-700 mb-2">
+      <Label htmlFor="citySearch" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         Search City
       </Label>
       <div className="relative">
@@ -81,14 +82,15 @@ export default function CitySearch({ onLocationSelect }: CitySearchProps) {
           ref={inputRef}
           id="citySearch"
           type="text"
-          placeholder="Enter city name..."
+          placeholder={isConnected ? "Enter city name..." : "Connect to search cities"}
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
             setShowSuggestions(true);
           }}
           onFocus={() => setShowSuggestions(true)}
-          className="pl-10 pr-12"
+          className="pl-10 pr-12 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+          disabled={!isConnected}
         />
         <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Button
@@ -97,31 +99,32 @@ export default function CitySearch({ onLocationSelect }: CitySearchProps) {
           size="sm"
           onClick={handleCurrentLocation}
           className="absolute right-1 top-1/2 transform -translate-y-1/2 p-2 text-primary hover:text-blue-700"
+          disabled={!isConnected}
         >
           <Navigation className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Autocomplete dropdown */}
-      {showSuggestions && searchQuery.length >= 2 && (
-        <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg mt-1 shadow-lg z-10 max-h-60 overflow-y-auto">
+      {showSuggestions && searchQuery.length >= 2 && isConnected && (
+        <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mt-1 shadow-lg z-10 max-h-60 overflow-y-auto">
           {isLoading ? (
-            <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
+            <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">Loading...</div>
           ) : suggestions.length > 0 ? (
             suggestions.map((suggestion, index) => (
               <div
                 key={index}
-                className="px-4 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0"
                 onClick={() => handleSuggestionClick(suggestion)}
               >
                 <div className="flex items-center space-x-2">
                   <i className="fas fa-map-marker-alt text-gray-400"></i>
-                  <span className="text-sm">{suggestion.placeName}</span>
+                  <span className="text-sm text-gray-900 dark:text-gray-100">{suggestion.placeName}</span>
                 </div>
               </div>
             ))
           ) : (
-            <div className="px-4 py-2 text-sm text-gray-500">No cities found</div>
+            <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No cities found</div>
           )}
         </div>
       )}

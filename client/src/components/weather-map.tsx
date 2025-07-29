@@ -18,9 +18,10 @@ import {
 
 interface WeatherMapProps {
   selectedLocation: { lat: number; lon: number; name: string } | null;
+  isConnected: boolean;
 }
 
-export default function WeatherMap({ selectedLocation }: WeatherMapProps) {
+export default function WeatherMap({ selectedLocation, isConnected }: WeatherMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -40,7 +41,8 @@ export default function WeatherMap({ selectedLocation }: WeatherMapProps) {
         timestamp: new Date(strike.timestamp)
       }));
     },
-    refetchInterval: 10000,
+    refetchInterval: isConnected ? 10000 : false,
+    enabled: isConnected,
   });
 
   // Initialize map
