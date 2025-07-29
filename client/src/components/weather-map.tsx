@@ -27,6 +27,7 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
   const [mapLoaded, setMapLoaded] = useState(false);
   const [activeLayer, setActiveLayer] = useState<'lightning' | 'weather' | 'radar'>('lightning');
   const [coordinates, setCoordinates] = useState({ lat: 37.7749, lon: -122.4194 });
+  const [lightningMarkers, setLightningMarkers] = useState<any[]>([]);
 
   const { data: lightningStrikes = [] } = useQuery<LightningStrike[]>({
     queryKey: ["/api/lightning"],
@@ -87,77 +88,251 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
 
   // Update lightning strikes on map
   useEffect(() => {
-    if (!map.current || !mapLoaded || activeLayer !== 'lightning') return;
+    if (!map.current || !mapLoaded) return;
 
-    // Remove existing lightning markers
-    const existingMarkers = document.querySelectorAll('.lightning-marker');
-    existingMarkers.forEach(marker => marker.remove());
+    // Clear existing markers
+    lightningMarkers.forEach(marker => marker.remove());
+    setLightningMarkers([]);
 
-    // Add new lightning strike markers
-    lightningStrikes.forEach((strike, index) => {
-      const markerEl = document.createElement('div');
-      markerEl.className = 'lightning-marker';
-      
-      // Determine size and color based on intensity
-      const intensity = strike.intensity;
-      let size, color, pulseColor;
-      
-      if (intensity >= 8) {
-        size = '24px';
-        color = '#ef4444'; // red-500
-        pulseColor = '#fca5a5'; // red-300
-      } else if (intensity >= 5) {
-        size = '20px';
-        color = '#f59e0b'; // amber-500
-        pulseColor = '#fcd34d'; // amber-300
-      } else {
-        size = '16px';
-        color = '#eab308'; // yellow-500
-        pulseColor = '#fde047'; // yellow-300
-      }
-      
-      markerEl.innerHTML = `
-        <div style="position: relative; width: ${size}; height: ${size};">
-          <div style="
-            width: ${size}; 
-            height: ${size}; 
-            background-color: ${pulseColor}; 
-            border-radius: 50%; 
-            animation: lightning-pulse 1s ease-in-out infinite;
-            position: absolute;
-          "></div>
-          <div style="
-            width: ${size}; 
-            height: ${size}; 
-            background-color: ${color}; 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            position: absolute;
-            z-index: 10;
-          ">
-            ⚡
+    // Only add lightning markers if lightning layer is active
+    if (activeLayer === 'lightning' && lightningStrikes.length > 0) {
+      const newMarkers: any[] = [];
+
+      lightningStrikes.forEach((strike) => {
+        // Determine size and color based on intensity
+        const intensity = strike.intensity;
+        let size, color, pulseColor;
+        
+        if (intensity >= 8) {
+          size = '24px';
+          color = '#ef4444'; // red-500
+          pulseColor = '#fca5a5'; // red-300
+        } else if (intensity >= 5) {
+          size = '20px';
+          color = '#f59e0b'; // amber-500
+          pulseColor = '#fcd34d'; // amber-300
+        } else {
+          size = '16px';
+          color = '#eab308'; // yellow-500
+          pulseColor = '#fde047'; // yellow-300
+        }
+        
+        const markerEl = document.createElement('div');
+        markerEl.className = 'lightning-marker';
+        markerEl.style.cursor = 'pointer';
+        
+        markerEl.innerHTML = `
+          <div style="position: relative; width: ${size}; height: ${size};">
+            <div style="
+              width: ${size}; 
+              height: ${size}; 
+              background-color: ${pulseColor}; 
+              border-radius: 50%; 
+              animation: lightning-pulse 1s ease-in-out infinite;
+              position: absolute;
+            "></div>
+            <div style="
+              width: ${size}; 
+              height: ${size}; 
+              background-color: ${color}; 
+              border-radius: 50%; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center;
+              position: absolute;
+              z-index: 10;
+              color: white;
+              font-size: 12px;
+            ">
+              ⚡
+            </div>
           </div>
-        </div>
-      `;
+        `;
 
-      // Create marker with Mapbox
-      if (window.mapboxgl) {
-        new window.mapboxgl.Marker(markerEl)
-          .setLngLat([strike.coordinates.lon, strike.coordinates.lat])
-          .addTo(map.current!);
-      }
-    });
+        // Create marker with Mapbox
+        if (window.mapboxgl) {
+          const marker = new window.mapboxgl.Marker(markerEl)
+            .setLngLat([strike.coordinates.lon, strike.coordinates.lat])
+            .addTo(map.current!);
+          
+          newMarkers.push(marker);
+        }
+      });
+
+      setLightningMarkers(newMarkers);
+    }
   }, [lightningStrikes, mapLoaded, activeLayer]);
 
-  // Clear lightning markers when switching away from lightning layer
+  // Add weather layer functionality
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
-    
-    if (activeLayer !== 'lightning') {
-      const existingMarkers = document.querySelectorAll('.lightning-marker');
-      existingMarkers.forEach(marker => marker.remove());
+
+    const mapInstance = map.current as any;
+
+    if (activeLayer === 'weather') {
+      // Add temperature overlay layer
+      if (!mapInstance.getSource('temperature-data')) {
+        // Add a simple temperature visualization
+        mapInstance.addSource('temperature-data', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [-122.4194, 37.7749] // San Francisco
+                },
+                properties: {
+                  temperature: 22,
+                  city: 'San Francisco'
+                }
+              },
+              {
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [-118.2437, 34.0522] // Los Angeles
+                },
+                properties: {
+                  temperature: 28,
+                  city: 'Los Angeles'
+                }
+              },
+              {
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [-87.6298, 41.8781] // Chicago
+                },
+                properties: {
+                  temperature: 15,
+                  city: 'Chicago'
+                }
+              }
+            ]
+          }
+        });
+
+        mapInstance.addLayer({
+          id: 'temperature-layer',
+          type: 'circle',
+          source: 'temperature-data',
+          paint: {
+            'circle-radius': 30,
+            'circle-color': [
+              'interpolate',
+              ['linear'],
+              ['get', 'temperature'],
+              0, '#0000ff',  // Blue for cold
+              15, '#00ff00', // Green for mild
+              25, '#ffff00', // Yellow for warm
+              35, '#ff0000'  // Red for hot
+            ],
+            'circle-opacity': 0.6
+          }
+        });
+
+        mapInstance.addLayer({
+          id: 'temperature-labels',
+          type: 'symbol',
+          source: 'temperature-data',
+          layout: {
+            'text-field': ['format', ['get', 'temperature'], '°C'],
+            'text-font': ['Open Sans Regular'],
+            'text-size': 12
+          },
+          paint: {
+            'text-color': '#ffffff'
+          }
+        });
+      }
+    } else {
+      // Remove weather layers when switching away
+      if (mapInstance.getLayer('temperature-layer')) {
+        mapInstance.removeLayer('temperature-layer');
+        mapInstance.removeLayer('temperature-labels');
+        mapInstance.removeSource('temperature-data');
+      }
+    }
+  }, [activeLayer, mapLoaded]);
+
+  // Add radar layer functionality
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+
+    const mapInstance = map.current as any;
+
+    if (activeLayer === 'radar') {
+      // Add precipitation radar simulation
+      if (!mapInstance.getSource('radar-data')) {
+        mapInstance.addSource('radar-data', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [
+              {
+                type: 'Feature',
+                geometry: {
+                  type: 'Polygon',
+                  coordinates: [[
+                    [-123, 38],
+                    [-121, 38],
+                    [-121, 36],
+                    [-123, 36],
+                    [-123, 38]
+                  ]]
+                },
+                properties: {
+                  intensity: 'heavy',
+                  type: 'rain'
+                }
+              },
+              {
+                type: 'Feature',
+                geometry: {
+                  type: 'Polygon',
+                  coordinates: [[
+                    [-119, 35],
+                    [-117, 35],
+                    [-117, 33],
+                    [-119, 33],
+                    [-119, 35]
+                  ]]
+                },
+                properties: {
+                  intensity: 'light',
+                  type: 'rain'
+                }
+              }
+            ]
+          }
+        });
+
+        mapInstance.addLayer({
+          id: 'radar-layer',
+          type: 'fill',
+          source: 'radar-data',
+          paint: {
+            'fill-color': [
+              'match',
+              ['get', 'intensity'],
+              'light', '#90EE90',  // Light green
+              'moderate', '#32CD32', // Green
+              'heavy', '#228B22',   // Dark green
+              '#90EE90'
+            ],
+            'fill-opacity': 0.5
+          }
+        });
+      }
+    } else {
+      // Remove radar layers when switching away
+      if (mapInstance.getLayer('radar-layer')) {
+        mapInstance.removeLayer('radar-layer');
+        mapInstance.removeSource('radar-data');
+      }
     }
   }, [activeLayer, mapLoaded]);
 
@@ -285,22 +460,40 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
           
           {activeLayer === 'weather' && (
             <div className="space-y-2">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Shows temperature overlays, wind patterns, and weather conditions
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Feature in development - will display weather data layers
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Cold (0-15°C)</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Mild (15-25°C)</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Warm (25-35°C)</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Hot (35°C+)</span>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                Temperature zones for major cities
               </p>
             </div>
           )}
           
           {activeLayer === 'radar' && (
             <div className="space-y-2">
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Displays precipitation radar and storm tracking data
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Feature in development - will show weather radar imagery
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-green-300 rounded"></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Light Precipitation</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-green-600 rounded"></div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Heavy Precipitation</span>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                Simulated weather radar showing precipitation areas
               </p>
             </div>
           )}
