@@ -87,7 +87,7 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
 
   // Update lightning strikes on map
   useEffect(() => {
-    if (!map.current || !mapLoaded) return;
+    if (!map.current || !mapLoaded || activeLayer !== 'lightning') return;
 
     // Remove existing lightning markers
     const existingMarkers = document.querySelectorAll('.lightning-marker');
@@ -98,14 +98,46 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
       const markerEl = document.createElement('div');
       markerEl.className = 'lightning-marker';
       
-      // Determine size based on intensity
-      const size = strike.intensity >= 8 ? '6' : strike.intensity >= 5 ? '4' : '3';
+      // Determine size and color based on intensity
+      const intensity = strike.intensity;
+      let size, color, pulseColor;
+      
+      if (intensity >= 8) {
+        size = '24px';
+        color = '#ef4444'; // red-500
+        pulseColor = '#fca5a5'; // red-300
+      } else if (intensity >= 5) {
+        size = '20px';
+        color = '#f59e0b'; // amber-500
+        pulseColor = '#fcd34d'; // amber-300
+      } else {
+        size = '16px';
+        color = '#eab308'; // yellow-500
+        pulseColor = '#fde047'; // yellow-300
+      }
       
       markerEl.innerHTML = `
-        <div class="relative">
-          <div class="w-${size} h-${size} bg-warning rounded-full animate-ping"></div>
-          <div class="absolute inset-0 w-${size} h-${size} bg-warning rounded-full flex items-center justify-center">
-            <i class="fas fa-bolt text-white text-xs"></i>
+        <div style="position: relative; width: ${size}; height: ${size};">
+          <div style="
+            width: ${size}; 
+            height: ${size}; 
+            background-color: ${pulseColor}; 
+            border-radius: 50%; 
+            animation: lightning-pulse 1s ease-in-out infinite;
+            position: absolute;
+          "></div>
+          <div style="
+            width: ${size}; 
+            height: ${size}; 
+            background-color: ${color}; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            position: absolute;
+            z-index: 10;
+          ">
+            ⚡
           </div>
         </div>
       `;
@@ -117,7 +149,17 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
           .addTo(map.current!);
       }
     });
-  }, [lightningStrikes, mapLoaded]);
+  }, [lightningStrikes, mapLoaded, activeLayer]);
+
+  // Clear lightning markers when switching away from lightning layer
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    
+    if (activeLayer !== 'lightning') {
+      const existingMarkers = document.querySelectorAll('.lightning-marker');
+      existingMarkers.forEach(marker => marker.remove());
+    }
+  }, [activeLayer, mapLoaded]);
 
   const handleZoomIn = () => {
     if (map.current) {
@@ -152,15 +194,16 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
   return (
     <main className="flex-1 flex flex-col">
       {/* Map Controls */}
-      <div className="bg-surface border-b border-gray-200 p-4">
+      <div className="bg-surface dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h2 className="text-lg font-semibold text-gray-800">Interactive Map</h2>
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Interactive Map</h2>
             <div className="flex items-center space-x-2">
               <Button
                 variant={activeLayer === 'lightning' ? 'default' : 'secondary'}
                 size="sm"
                 onClick={() => setActiveLayer('lightning')}
+                title="Show live lightning strikes on the map"
               >
                 <Zap className="mr-1 h-4 w-4" />
                 Lightning
@@ -169,6 +212,7 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
                 variant={activeLayer === 'weather' ? 'default' : 'secondary'}
                 size="sm"
                 onClick={() => setActiveLayer('weather')}
+                title="Show weather overlays and temperature data"
               >
                 <Cloud className="mr-1 h-4 w-4" />
                 Weather
@@ -177,6 +221,7 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
                 variant={activeLayer === 'radar' ? 'default' : 'secondary'}
                 size="sm"
                 onClick={() => setActiveLayer('radar')}
+                title="Show weather radar and precipitation data"
               >
                 <Satellite className="mr-1 h-4 w-4" />
                 Radar
@@ -205,27 +250,60 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
       <div className="flex-1 relative">
         <div ref={mapContainer} className="w-full h-full" />
 
-        {/* Map Legend */}
-        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-lg p-4 max-w-xs">
-          <h4 className="font-semibold text-gray-800 mb-3">Legend</h4>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-warning rounded-full flex items-center justify-center">
-                <Zap className="text-white text-xs h-2 w-2" />
+        {/* Map Legend and Layer Info */}
+        <div className="absolute bottom-4 left-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 max-w-xs">
+          <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">
+            {activeLayer === 'lightning' ? 'Lightning Activity' : 
+             activeLayer === 'weather' ? 'Weather Data' : 'Radar View'}
+          </h4>
+          
+          {activeLayer === 'lightning' && (
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  ⚡
+                </div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">High Intensity (8+)</span>
               </div>
-              <span className="text-sm text-gray-700">High Intensity Strike</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-orange-500 rounded-full flex items-center justify-center">
-                <Zap className="text-white text-xs h-2 w-2" />
+              <div className="flex items-center space-x-2">
+                <div className="w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center">
+                  ⚡
+                </div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Medium Intensity (5-7)</span>
               </div>
-              <span className="text-sm text-gray-700">Medium Intensity Strike</span>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                  ⚡
+                </div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Low Intensity (1-4)</span>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                Live lightning strikes updated every 10 seconds
+              </p>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm text-gray-700">Low Intensity Strike</span>
+          )}
+          
+          {activeLayer === 'weather' && (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                Shows temperature overlays, wind patterns, and weather conditions
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Feature in development - will display weather data layers
+              </p>
             </div>
-          </div>
+          )}
+          
+          {activeLayer === 'radar' && (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                Displays precipitation radar and storm tracking data
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Feature in development - will show weather radar imagery
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Coordinates Display */}
