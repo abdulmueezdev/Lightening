@@ -29,6 +29,17 @@ export default function WeatherMap({ selectedLocation }: WeatherMapProps) {
 
   const { data: lightningStrikes = [] } = useQuery<LightningStrike[]>({
     queryKey: ["/api/lightning"],
+    queryFn: async () => {
+      const response = await fetch('/api/lightning');
+      if (!response.ok) {
+        throw new Error('Failed to fetch lightning data');
+      }
+      const data = await response.json();
+      return data.map((strike: any) => ({
+        ...strike,
+        timestamp: new Date(strike.timestamp)
+      }));
+    },
     refetchInterval: 10000,
   });
 
@@ -84,10 +95,14 @@ export default function WeatherMap({ selectedLocation }: WeatherMapProps) {
     lightningStrikes.forEach((strike, index) => {
       const markerEl = document.createElement('div');
       markerEl.className = 'lightning-marker';
+      
+      // Determine size based on intensity
+      const size = strike.intensity >= 8 ? '6' : strike.intensity >= 5 ? '4' : '3';
+      
       markerEl.innerHTML = `
         <div class="relative">
-          <div class="w-${strike.intensity >= 8 ? '6' : strike.intensity >= 5 ? '4' : '3'} h-${strike.intensity >= 8 ? '6' : strike.intensity >= 5 ? '4' : '3'} bg-warning rounded-full animate-ping"></div>
-          <div class="absolute inset-0 w-${strike.intensity >= 8 ? '6' : strike.intensity >= 5 ? '4' : '3'} h-${strike.intensity >= 8 ? '6' : strike.intensity >= 5 ? '4' : '3'} bg-warning rounded-full flex items-center justify-center">
+          <div class="w-${size} h-${size} bg-warning rounded-full animate-ping"></div>
+          <div class="absolute inset-0 w-${size} h-${size} bg-warning rounded-full flex items-center justify-center">
             <i class="fas fa-bolt text-white text-xs"></i>
           </div>
         </div>

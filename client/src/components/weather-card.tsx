@@ -8,10 +8,36 @@ interface WeatherCardProps {
 }
 
 export default function WeatherCard({ selectedLocation }: WeatherCardProps) {
-  const cityName = selectedLocation?.name.split(',')[0] || "San Francisco";
+  // Extract city name properly, handling coordinates vs city names
+  const getCityName = () => {
+    if (!selectedLocation) return "San Francisco";
+    
+    const name = selectedLocation.name;
+    // Check if it's coordinates (contains decimal point and comma)
+    if (name.includes('.') && name.includes(',') && name.split(',').length === 2) {
+      // It's coordinates, return null to disable the query
+      return null;
+    }
+    
+    // It's a city name, extract the first part
+    return name.split(',')[0].trim();
+  };
+  
+  const cityName = getCityName();
   
   const { data: weather, isLoading, error, refetch } = useQuery<WeatherData>({
     queryKey: ["/api/weather", cityName],
+    queryFn: async () => {
+      if (!cityName) throw new Error('No city name provided');
+      const response = await fetch(`/api/weather/${encodeURIComponent(cityName)}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('City not found');
+        }
+        throw new Error('Failed to fetch weather data');
+      }
+      return response.json();
+    },
     enabled: !!cityName,
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });

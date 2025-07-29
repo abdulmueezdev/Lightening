@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -14,12 +14,34 @@ export default function CitySearch({ onLocationSelect }: CitySearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const { data: suggestions = [], isLoading } = useQuery<CitySearchResult[]>({
-    queryKey: ["/api/cities/search", { q: searchQuery }],
+    queryKey: ["/api/cities/search", searchQuery],
+    queryFn: async () => {
+      const response = await fetch(`/api/cities/search?q=${encodeURIComponent(searchQuery)}`);
+      if (!response.ok) {
+        throw new Error('Failed to search cities');
+      }
+      return response.json();
+    },
     enabled: searchQuery.length >= 2,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
+
+  // Handle clicking outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleSuggestionClick = (suggestion: CitySearchResult) => {
     setSearchQuery(suggestion.placeName);
@@ -50,7 +72,7 @@ export default function CitySearch({ onLocationSelect }: CitySearchProps) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <Label htmlFor="citySearch" className="block text-sm font-medium text-gray-700 mb-2">
         Search City
       </Label>

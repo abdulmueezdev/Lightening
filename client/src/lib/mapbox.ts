@@ -37,15 +37,16 @@ export function initializeMap(container: HTMLElement): mapboxgl.Map | null {
 
   // Dynamically load Mapbox GL JS
   if (!window.mapboxgl) {
+    // Load CSS first
+    const link = document.createElement('link');
+    link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    
     const script = document.createElement('script');
     script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
     script.onload = () => {
-      const link = document.createElement('link');
-      link.href = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css';
-      link.rel = 'stylesheet';
-      document.head.appendChild(link);
-      
-      initMapInstance();
+      setTimeout(() => initMapInstance(), 100); // Small delay to ensure CSS loads
     };
     document.head.appendChild(script);
     return null;

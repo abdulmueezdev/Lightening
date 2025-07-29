@@ -10,6 +10,18 @@ interface LightningAlertsProps {
 export default function LightningAlerts({ enabled }: LightningAlertsProps) {
   const { data: strikes = [], isLoading } = useQuery<LightningStrike[]>({
     queryKey: ["/api/lightning"],
+    queryFn: async () => {
+      const response = await fetch('/api/lightning');
+      if (!response.ok) {
+        throw new Error('Failed to fetch lightning data');
+      }
+      const data = await response.json();
+      // Convert timestamp strings back to Date objects
+      return data.map((strike: any) => ({
+        ...strike,
+        timestamp: new Date(strike.timestamp)
+      }));
+    },
     refetchInterval: enabled ? 10000 : false, // Refetch every 10 seconds if enabled
   });
 
