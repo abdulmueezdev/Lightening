@@ -122,7 +122,12 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
         markerEl.style.cursor = 'pointer';
         
         markerEl.innerHTML = `
-          <div style="position: relative; width: ${size}; height: ${size};">
+          <div style="
+            position: relative; 
+            width: ${size}; 
+            height: ${size};
+            z-index: 1000;
+          ">
             <div style="
               width: ${size}; 
               height: ${size}; 
@@ -130,6 +135,7 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
               border-radius: 50%; 
               animation: lightning-pulse 1s ease-in-out infinite;
               position: absolute;
+              z-index: 999;
             "></div>
             <div style="
               width: ${size}; 
@@ -140,9 +146,12 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
               align-items: center; 
               justify-content: center;
               position: absolute;
-              z-index: 10;
+              z-index: 1000;
               color: white;
               font-size: 12px;
+              font-weight: bold;
+              border: 2px solid white;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             ">
               ⚡
             </div>
@@ -150,10 +159,10 @@ export default function WeatherMap({ selectedLocation, isConnected }: WeatherMap
         `;
 
         // Create marker with Mapbox
-        if (window.mapboxgl) {
+        if (window.mapboxgl && map.current) {
           const marker = new window.mapboxgl.Marker(markerEl)
             .setLngLat([strike.coordinates.lon, strike.coordinates.lat])
-            .addTo(map.current!);
+            .addTo(map.current);
           
           newMarkers.push(marker);
         }

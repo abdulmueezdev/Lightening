@@ -14,13 +14,13 @@ export default function WeatherCard({ selectedLocation, isConnected }: WeatherCa
     if (!selectedLocation) return "San Francisco";
     
     const name = selectedLocation.name;
-    // Check if it's coordinates (contains decimal point and comma)
-    if (name.includes('.') && name.includes(',') && name.split(',').length === 2) {
+    // Check if it's coordinates format like "37.7749, -122.4194"
+    if (name.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/)) {
       // It's coordinates, return null to disable the query
       return null;
     }
     
-    // It's a city name, extract the first part
+    // It's a city name, extract the first part before any comma
     return name.split(',')[0].trim();
   };
   
