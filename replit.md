@@ -8,6 +8,15 @@ Storm Watch Sky is a real-time weather monitoring application that provides ligh
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+**July 30, 2025:**
+- Fixed lightning alerts scrolling with max height and 20 strike limit
+- Repositioned time display under intensity bars in HH:MM:SS format  
+- Created complete GitHub setup with documentation
+- Added .env.example template for easy project setup
+- Project ready for GitHub upload and sharing
+
 ## System Architecture
 
 ### Frontend Architecture
