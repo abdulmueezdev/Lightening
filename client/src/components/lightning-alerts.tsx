@@ -93,7 +93,7 @@ export default function LightningAlerts({ enabled, isConnected }: LightningAlert
                       </>
                     )}
                   </p>
-                  <div className="flex items-center justify-between">
+                  <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <span className="text-xs text-gray-500 dark:text-gray-400">Intensity:</span>
                       <div className="flex space-x-1">
@@ -108,12 +108,10 @@ export default function LightningAlerts({ enabled, isConnected }: LightningAlert
                         {strike.intensity}/10
                       </span>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                        {formatTimeAgo(strike.timestamp)}
-                      </div>
-                      <div className="text-xs text-gray-400 dark:text-gray-500">
-                        ago
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Time:</span>
+                      <div className="text-xs text-gray-600 dark:text-gray-300 font-mono">
+                        {formatTimeAgo(strike.timestamp)} ago
                       </div>
                     </div>
                   </div>
