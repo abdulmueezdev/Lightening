@@ -70,8 +70,8 @@ export default function LightningAlerts({ enabled, isConnected }: LightningAlert
           ))}
         </div>
       ) : strikes.length > 0 ? (
-        <div className="space-y-3">
-          {strikes.map((strike) => (
+        <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+          {strikes.slice(0, 20).map((strike) => (
             <div
               key={strike.id}
               className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 animate-slide-in"
@@ -81,12 +81,7 @@ export default function LightningAlerts({ enabled, isConnected }: LightningAlert
                   <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-400 lightning-pulse" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Lightning Strike Detected</p>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatTimeAgo(strike.timestamp)}
-                    </span>
-                  </div>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">Lightning Strike Detected</p>
                   <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">
                     <span>
                       {strike.coordinates.lat.toFixed(2)}°N, {Math.abs(strike.coordinates.lon).toFixed(2)}°W
@@ -98,47 +93,34 @@ export default function LightningAlerts({ enabled, isConnected }: LightningAlert
                       </>
                     )}
                   </p>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">Intensity:</span>
-                    <div className="flex space-x-1">
-                      {getIntensityBars(strike.intensity).map((bar) => (
-                        <div
-                          key={bar.key}
-                          className={bar.className}
-                        />
-                      ))}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Intensity:</span>
+                      <div className="flex space-x-1">
+                        {getIntensityBars(strike.intensity).map((bar) => (
+                          <div
+                            key={bar.key}
+                            className={bar.className}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs font-medium text-warning">
+                        {strike.intensity}/10
+                      </span>
                     </div>
-                    <span className="text-xs font-medium text-warning">
-                      {strike.intensity}/10
-                    </span>
+                    <div className="text-right">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                        {formatTimeAgo(strike.timestamp)}
+                      </div>
+                      <div className="text-xs text-gray-400 dark:text-gray-500">
+                        ago
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           ))}
-          
-          {/* All Clear message if no recent strikes */}
-          {strikes.length === 0 && (
-            <div className="bg-success/10 border border-success/20 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <CheckCircle className="w-5 h-5 text-success" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-medium text-gray-800">All Clear</p>
-                    <span className="text-xs text-gray-500">
-                      <Clock className="w-3 h-3 inline mr-1" />
-                      Now
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-600">
-                    No lightning activity detected in the last 5 minutes
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       ) : (
         <div className="bg-success/10 border border-success/20 rounded-lg p-4">

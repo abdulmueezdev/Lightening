@@ -13,14 +13,16 @@ export function useLightning() {
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) {
-      return diffInSeconds <= 5 ? 'Just now' : `${diffInSeconds}s ago`;
+      return `00:00:${diffInSeconds.toString().padStart(2, '0')}`;
     } else if (diffInSeconds < 3600) {
       const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes} min ago`;
+      const seconds = diffInSeconds % 60;
+      return `00:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     } else if (diffInSeconds < 86400) {
       const hours = Math.floor(diffInSeconds / 3600);
       const minutes = Math.floor((diffInSeconds % 3600) / 60);
-      return minutes > 0 ? `${hours}h ${minutes}m ago` : `${hours}h ago`;
+      const seconds = diffInSeconds % 60;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     } else {
       const options: Intl.DateTimeFormatOptions = {
         month: 'short',
