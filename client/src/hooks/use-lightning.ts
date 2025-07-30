@@ -13,13 +13,22 @@ export function useLightning() {
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) {
-      return `${diffInSeconds}s ago`;
+      return diffInSeconds <= 5 ? 'Just now' : `${diffInSeconds}s ago`;
     } else if (diffInSeconds < 3600) {
       const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes}m ago`;
-    } else {
+      return `${minutes} min ago`;
+    } else if (diffInSeconds < 86400) {
       const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours}h ago`;
+      const minutes = Math.floor((diffInSeconds % 3600) / 60);
+      return minutes > 0 ? `${hours}h ${minutes}m ago` : `${hours}h ago`;
+    } else {
+      const options: Intl.DateTimeFormatOptions = {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      return date.toLocaleDateString('en-US', options);
     }
   };
 
