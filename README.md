@@ -203,4 +203,5 @@ For support, email support@stormwatchsky.com or join our Discord community.
 
 ---
 
-Built with ❤️ using modern web technologies
+Built with ❤️ using modern web technologies# Lightening
+# Lightening
